@@ -12,15 +12,22 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using AForge.Video.DirectShow;
+using AForge.Video;
 
 namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
-        Bitmap pre; //pre = pb1(Original Image) post = pb2(edited green background) post2 = pb3(Fused)
+        Bitmap pre; //pre = pb1(Original Image) post = pb2(edited green background) result = pb3(Fused)
         Bitmap post;
         Bitmap result;
         String path;
+        private bool isCamera = false;
+        private bool isRunning = false;
+        private bool isFiltered = false;
+        private FilterInfoCollection devices;
+        private VideoCaptureDevice video;
         public Form1()
         {
             InitializeComponent();
@@ -58,34 +65,48 @@ namespace WindowsFormsApp1
 
         private void button3_Click(object sender, EventArgs e)
         {
-            post = new Bitmap(pre.Width, pre.Height);
-            for (int x = 0; x <= (pre.Width - 1); x++)
+            if (!isRunning)
             {
-                for (int y = 0; y <= (pre.Height - 1); y++)
+                post = new Bitmap(pre.Width, pre.Height);
+                for (int x = 0; x <= (pre.Width - 1); x++)
                 {
-                    Color color = pre.GetPixel(x, y);
-                    int c = (color.R + color.G + color.B) / 3;
-                    color = Color.FromArgb(c, c, c);
-                    post.SetPixel(x, y, color);
-                    pictureBox2.Image = post;
-                    pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
+                    for (int y = 0; y <= (pre.Height - 1); y++)
+                    {
+                        Color color = pre.GetPixel(x, y);
+                        int c = (color.R + color.G + color.B) / 3;
+                        color = Color.FromArgb(c, c, c);
+                        post.SetPixel(x, y, color);
+                        pictureBox3.Image = post;
+                        pictureBox3.SizeMode = PictureBoxSizeMode.StretchImage;
+                    }
                 }
+            }
+            else
+            {
+                
             }
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            post = new Bitmap(pre.Width, pre.Height);
-            for (int x = 0; x <= (pre.Width - 1); x++)
+            if (!isRunning)
             {
-                for (int y = 0; y <= (pre.Height - 1); y++)
+                post = new Bitmap(pre.Width, pre.Height);
+                for (int x = 0; x <= (pre.Width - 1); x++)
                 {
-                    Color color = pre.GetPixel(x, y);
-                    color = Color.FromArgb(255 - color.R, 255 - color.G, 255 - color.B);
-                    post.SetPixel(x, y, color);
-                    pictureBox2.Image = post;
-                    pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
+                    for (int y = 0; y <= (pre.Height - 1); y++)
+                    {
+                        Color color = pre.GetPixel(x, y);
+                        color = Color.FromArgb(255 - color.R, 255 - color.G, 255 - color.B);
+                        post.SetPixel(x, y, color);
+                        pictureBox2.Image = post;
+                        pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
+                    }
                 }
+            }
+            else
+            {
+
             }
         }
 
@@ -155,9 +176,15 @@ namespace WindowsFormsApp1
 
         private void button6_Click(object sender, EventArgs e)
         {
-            Image img = Sepia((Bitmap)pictureBox1.Image.Clone());
-            pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBox2.Image = img;
+            if (!isRunning)
+            {
+                Image img = Sepia((Bitmap)pictureBox1.Image.Clone());
+                pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
+                pictureBox2.Image = img;
+            } else
+            {
+
+            }
         }
 
 
@@ -230,8 +257,10 @@ namespace WindowsFormsApp1
                 pictureBox2.Image = post;
                 pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
             }
-
-            pictureBox3.Image = subtract(pre);
+            if (pictureBox2 != null)
+            {
+                pictureBox3.Image = subtract(pre);
+            }
         }
 
         private void button9_Click(object sender, EventArgs e)
@@ -309,12 +338,54 @@ namespace WindowsFormsApp1
 
         private void button11_Click(object sender, EventArgs e)
         {
-           
+            StartCameraView();
         }
 
         private void button12_Click(object sender, EventArgs e)
         {
+            StopCameraView();
+        }
+        //camera shiz
+        private void videoNewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+            Image cameraFrame = (Image)eventArgs.Frame.Clone();
+
+            pictureBox1.Invoke((MethodInvoker)delegate
+            {
+                pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+                pictureBox1.Image = cameraFrame;
+                if (!isFiltered)
+                {
+                    pictureBox3.SizeMode = PictureBoxSizeMode.Zoom;
+                    pictureBox3.Image = cameraFrame;
+                }
+            });
+
+        }
+        private void StartCameraView()
+        {
+            devices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+
+            if (devices.Count > 0)
+            {
+                video = new VideoCaptureDevice(devices[0].MonikerString);
+                video.NewFrame += videoNewFrame;
+                video.Start();
+                isRunning = true;
+            }
+            else
+            {
+                MessageBox.Show("No video devices found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void StopCameraView()
+        {
             
+                video.SignalToStop();
+                video.WaitForStop();
+                isRunning = false;
+           
         }
     }
 }
