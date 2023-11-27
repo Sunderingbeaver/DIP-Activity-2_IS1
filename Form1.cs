@@ -229,20 +229,23 @@ namespace WindowsFormsApp1
                 pictureBox2.Image = post;
                 pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
             }
+
+            pictureBox3.Image = subtract(pre);
         }
 
         private void button9_Click(object sender, EventArgs e)
         {
+            Bitmap b = pre;
             Color gr = Color.FromArgb(0, 0, 255);
-            int ggreen = (gr.R + gr.G + gr.B)/3;
+            int ggreen = (gr.R + gr.G + gr.B) / 3;
             int threshold = 10;
-            int height = pictureBox1.Height;
-            int width = pictureBox1.Width;
             result = new Bitmap(pictureBox3.Width, pictureBox3.Height);
-
-            for (int x = 0; x < width; x++)
+            Image image = pre, image2 = post;
+            pre = resize(image, 178, 200);
+            post = resize(image2, 178, 200);
+            for (int x = 0; x < result.Width; x++)
             {
-                for (int y = 0; y < height; y++)
+                for (int y = 0; y < result.Height; y++)
                 {
                     Color pixel = pre.GetPixel(x, y);
                     Color backpixel = post.GetPixel(x, y);
@@ -258,8 +261,50 @@ namespace WindowsFormsApp1
                     }
                 }
             }
-                Image img = result;
-                pictureBox3.Image = img;
+            Image resultr = result;
+            result = resize(resultr, (pictureBox3.Height - 1), (pictureBox3.Width - 1));
+            pictureBox3.Image = result;
         }
+        private Bitmap subtract(Bitmap b)
+        {
+            Color gr = Color.FromArgb(0, 0, 255);
+            int ggreen = (gr.R + gr.G + gr.B) / 3;
+            int threshold = 10;
+            result = new Bitmap(pictureBox3.Width, pictureBox3.Height);
+            Image image = pre, image2 = post;
+            pre = resize(image, 178, 200);
+            post = resize(image2, 178, 200);
+            for (int x = 0; x < result.Width; x++)
+            {
+                for (int y = 0; y < result.Height; y++)
+                {
+                    Color pixel = pre.GetPixel(x, y);
+                    Color backpixel = post.GetPixel(x, y);
+                    int grey = (pixel.R + pixel.G + pixel.B) / 3;
+                    int subractvalue = Math.Abs(grey - ggreen);
+                    if (subractvalue < threshold)
+                    {
+                        result.SetPixel(x, y, backpixel);
+                    }
+                    else
+                    {
+                        result.SetPixel(x, y, pixel);
+                    }
+                }
+            }
+            Image resultr = result;
+            result = resize(resultr, (pictureBox3.Height-1), (pictureBox3.Width-1));
+            return result;
+        }
+        private Bitmap resize(Image image, int height, int width)
+        {
+            Bitmap result = new Bitmap(width, height);
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                g.DrawImage(image, 0, 0, width, height);
+            }
+            return result;
+        }
+
     }
 }
