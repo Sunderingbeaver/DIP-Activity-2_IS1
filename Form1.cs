@@ -43,6 +43,7 @@ namespace WindowsFormsApp1
             
         }
 
+
         private void button2_Click(object sender, EventArgs e)
         {
             OpenFileDialog open = new OpenFileDialog();
@@ -306,5 +307,14 @@ namespace WindowsFormsApp1
             return result;
         }
 
+        private void button11_Click(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void button12_Click(object sender, EventArgs e)
+        {
+            
+        }
     }
 }
